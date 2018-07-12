@@ -32,7 +32,7 @@ namespace MailTTS
             var s = string.Format("{0} 说：{1}", from, subject);
             this.Invoke(AddLog, s);
             var synthes = new SpeechSynthesizer();
-            synthes.Rate = 3;
+            synthes.Rate = 2;
             synthes.SpeakAsync(s);
         }
 
