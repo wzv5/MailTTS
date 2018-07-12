@@ -49,7 +49,8 @@ namespace MailTTS
         {
             using (var cmd = db.CreateCommand())
             {
-                cmd.CommandText = "SELECT Name from Messages_Contacts WHERE MessageId = " + id.ToString() + " AND Type = 0 ORDER BY Id DESC LIMIT 1";
+                cmd.CommandText = "SELECT Name from Messages_Contacts WHERE MessageId = @id AND Type = 0 ORDER BY Id DESC LIMIT 1";
+                cmd.Parameters.Add(new SQLiteParameter("id", id));
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
