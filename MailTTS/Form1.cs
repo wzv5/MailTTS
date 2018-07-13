@@ -9,21 +9,42 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace MailTTS
 {
     public partial class Form1 : Form
     {
-        private MailChecker checker;
+        private MailChecker checker = new MailChecker();
         private delegate void LogDelegate(string msg);
         private LogDelegate AddLog;
+        private ConcurrentQueue<string> msgQueue = new ConcurrentQueue<string>();
+        private CancellationTokenSource cts = new CancellationTokenSource();
+        private Task ttsTask;
 
         public Form1()
         {
             InitializeComponent();
 
+            ttsTask = Task.Run(() => {
+                var synthes = new SpeechSynthesizer();
+                synthes.Rate = 2;
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    if (msgQueue.TryDequeue(out var msg))
+                    {
+                        synthes.SpeakAsync(msg);
+                    }
+                    else
+                    {
+                        cts.Token.WaitHandle.WaitOne(1000);
+                    }
+                }
+                synthes.SpeakAsyncCancelAll();
+            });
+
             AddLog = Log;
-            checker = new MailChecker();
             checker.OnMessage += Checker_OnMessage;
         }
 
@@ -31,9 +52,7 @@ namespace MailTTS
         {
             var s = string.Format("{0} 说：{1}", from, subject);
             this.Invoke(AddLog, s);
-            var synthes = new SpeechSynthesizer();
-            synthes.Rate = 2;
-            synthes.SpeakAsync(s);
+            msgQueue.Enqueue(s);
         }
 
         private void Log(string msg)
@@ -62,6 +81,12 @@ namespace MailTTS
             {
                 this.WindowState = FormWindowState.Normal;
             }
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            cts.Cancel();
+            ttsTask.Wait();
         }
     }
 }
