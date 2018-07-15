@@ -22,7 +22,7 @@ namespace MailTTS
         {
             using (var cmd = db.CreateCommand())
             {
-                cmd.CommandText = "SELECT Id, Subject, DraftChecksum from Messages ORDER BY Id DESC LIMIT 100";
+                cmd.CommandText = "SELECT Id, Subject, DraftChecksum FROM Messages WHERE IsRead = 0 ORDER BY Id DESC LIMIT 100";
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
                     while (await reader.ReadAsync())
@@ -49,7 +49,7 @@ namespace MailTTS
         {
             using (var cmd = db.CreateCommand())
             {
-                cmd.CommandText = "SELECT Name from Messages_Contacts WHERE MessageId = @id AND Type = 0 ORDER BY Id DESC LIMIT 1";
+                cmd.CommandText = "SELECT Name FROM Messages_Contacts WHERE MessageId = @id AND Type = 0 ORDER BY Id DESC LIMIT 1";
                 cmd.Parameters.Add(new SQLiteParameter("id", id));
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
