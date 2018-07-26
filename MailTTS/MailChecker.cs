@@ -34,7 +34,7 @@ namespace MailTTS
             if (msg != null)
             {
                 var (id, sub, from) = msg;
-                if (lastMsgId != id)
+                if (id > lastMsgId)
                 {
                     OnMessage?.Invoke(from, sub);
                 }
