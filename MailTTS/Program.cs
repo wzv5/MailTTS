@@ -16,7 +16,13 @@ namespace MailTTS
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             Application.Run(new Form1());
+        }
+
+        private static void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+        {
+            MessageBox.Show(e.Exception.Message, "程序意外崩溃", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }
