@@ -18,11 +18,13 @@ namespace MailTTS
         }
 
         // id, subject, from
-        public async Task<Tuple<long, string, string>> GetLastMessage()
+        public async Task<IList<Tuple<long, string, string>>> GetLastMessage(long lastid)
         {
+            var result = new List<Tuple<long, string, string>>();
             using (var cmd = db.CreateCommand())
             {
-                cmd.CommandText = "SELECT Id, Subject, DraftChecksum FROM Messages WHERE IsRead = 0 ORDER BY Id DESC LIMIT 100";
+                cmd.CommandText = "SELECT Id, Subject, DraftChecksum FROM Messages WHERE IsRead = 0 AND Id > @lastid ORDER BY Id DESC LIMIT 100";
+                cmd.Parameters.AddWithValue("lastid", lastid);
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
                     while (await reader.ReadAsync())
@@ -38,25 +40,28 @@ namespace MailTTS
                         }
 
                         string name = await GetFromName(id);
-                        return new Tuple<long, string, string>(id, sub, name);
+                        result.Add(new Tuple<long, string, string>(id, sub, name));
                     }
                 }
             }
-            return null;
+            return result;
         }
 
         private async Task<string> GetFromName(long id)
         {
             using (var cmd = db.CreateCommand())
             {
-                cmd.CommandText = "SELECT Name FROM Messages_Contacts WHERE MessageId = @id AND Type = 0 ORDER BY Id DESC LIMIT 1";
-                cmd.Parameters.Add(new SQLiteParameter("id", id));
+                cmd.CommandText = "SELECT Name FROM Messages_Contacts WHERE MessageId = @id AND Type = 0 ORDER BY Id DESC";
+                cmd.Parameters.AddWithValue("id", id);
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    if (await reader.ReadAsync())
+                    while (await reader.ReadAsync())
                     {
-                        string name = reader.GetFieldValue<string>(0);
-                        return name;
+                        // 姓名字段可能为 NULL
+                        if (!await reader.IsDBNullAsync(0))
+                        {
+                            return reader.GetFieldValue<string>(0);
+                        }
                     }
                 }
             }
