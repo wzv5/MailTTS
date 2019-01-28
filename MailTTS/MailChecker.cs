@@ -33,28 +33,31 @@ namespace MailTTS
             timer = new Timer(OnTimer, null, 0, 5000);
         }
 
-        private async Task CheckNewMessage()
+        private void CheckNewMessage()
         {
-            var msg = await reader.GetLastMessage(lastMsgId);
-            foreach (var item in msg)
+            lock (this)
             {
-                var (id, sub, from) = item;
-                if (id > lastMsgId)
+                var msg = reader.GetLastMessage(lastMsgId).Result;
+                foreach (var item in msg)
                 {
-                    lastMsgId = id;
+                    var (id, sub, from) = item;
+                    if (id > lastMsgId)
+                    {
+                        lastMsgId = id;
+                    }
+                    OnMessage?.Invoke(from, sub);
                 }
-                OnMessage?.Invoke(from, sub);
             }
         }
 
-        private async void Watcher_Changed(object sender, FileSystemEventArgs e)
+        private void Watcher_Changed(object sender, FileSystemEventArgs e)
         {
-            await CheckNewMessage();
+            CheckNewMessage();
         }
 
-        private async void OnTimer(object sender)
+        private void OnTimer(object sender)
         {
-            await CheckNewMessage();
+            CheckNewMessage();
         }
     }
 }
