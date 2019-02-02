@@ -51,16 +51,20 @@ namespace MailTTS
         {
             using (var cmd = db.CreateCommand())
             {
-                cmd.CommandText = "SELECT Name FROM Messages_Contacts WHERE MessageId = @id AND Type = 0 ORDER BY Id DESC";
+                cmd.CommandText = "SELECT Name, Email FROM Messages_Contacts WHERE MessageId = @id AND Type = 0 ORDER BY Id DESC LIMIT 1";
                 cmd.Parameters.AddWithValue("id", id);
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    while (await reader.ReadAsync())
+                    if (await reader.ReadAsync())
                     {
                         // 姓名字段可能为 NULL
                         if (!await reader.IsDBNullAsync(0))
                         {
-                            return reader.GetFieldValue<string>(0);
+                            return reader.GetString(0);
+                        }
+                        else
+                        {
+                            return reader.GetString(1);
                         }
                     }
                 }
