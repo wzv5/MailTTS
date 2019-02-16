@@ -30,7 +30,7 @@ namespace MailTTS
             watcher.Changed += Watcher_Changed;
             watcher.EnableRaisingEvents = true;
 
-            timer = new Timer(OnTimer, null, 0, 5000);
+            timer = new Timer(OnTimer, null, 5000, 5000);
         }
 
         private void CheckNewMessage()
