@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Runtime.Caching;
 
 namespace MailTTS
 {
@@ -22,10 +23,13 @@ namespace MailTTS
         private ConcurrentQueue<string> msgQueue = new ConcurrentQueue<string>();
         private CancellationTokenSource cts = new CancellationTokenSource();
         private Task ttsTask;
+        private MemoryCache cache;
 
         public Form1()
         {
             InitializeComponent();
+
+            cache = MemoryCache.Default;
 
             ttsTask = Task.Run(() => {
                 var synthes = new SpeechSynthesizer();
@@ -34,7 +38,12 @@ namespace MailTTS
                 {
                     if (msgQueue.TryDequeue(out var msg))
                     {
-                        synthes.SpeakAsync(msg);
+                        if (!cache.Contains(msg))
+                        {
+                            // 跳过 10 秒内出现的重复消息
+                            cache.Add(msg, msg, DateTimeOffset.Now.AddSeconds(10));
+                            synthes.SpeakAsync(msg);
+                        }
                     }
                     else
                     {
