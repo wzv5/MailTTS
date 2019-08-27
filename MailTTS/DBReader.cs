@@ -9,7 +9,7 @@ namespace MailTTS
 {
     class DBReader
     {
-        private SQLiteConnection db;
+        private readonly SQLiteConnection db;
 
         public DBReader(string dbfile)
         {
@@ -40,7 +40,15 @@ namespace MailTTS
                         }
 
                         string name = await GetFromName(id);
-                        result.Add(new Tuple<long, string, string>(id, sub, name));
+
+                        if (await IsSpam(id))
+                        {
+                            result.Add(new Tuple<long, string, string>(id, "垃圾邮件", name));
+                        }
+                        else
+                        {
+                            result.Add(new Tuple<long, string, string>(id, sub, name));
+                        }
                     }
                 }
             }
@@ -70,6 +78,42 @@ namespace MailTTS
                 }
             }
             return "未知姓名";
+        }
+
+        private async Task<bool> IsSpam(long id)
+        {
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = "SELECT FolderId FROM Folders_Messages WHERE MessageId = @id";
+                cmd.Parameters.AddWithValue("id", id);
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync() && !await reader.IsDBNullAsync(0))
+                    {
+                        var folderid = reader.GetInt64(0);
+                        return await IsSpamFolder(folderid);
+                    }
+                }
+            }
+            return false;
+        }
+
+        private async Task<bool> IsSpamFolder(long folderid)
+        {
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = "SELECT Name FROM Folders WHERE Id = @id";
+                cmd.Parameters.AddWithValue("id", folderid);
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync() && !await reader.IsDBNullAsync(0))
+                    {
+                        var foldername = reader.GetString(0);
+                        return foldername.ToLower() == "spam";
+                    }
+                }
+            }
+            return false;
         }
     }
 }

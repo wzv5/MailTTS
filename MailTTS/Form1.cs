@@ -17,13 +17,13 @@ namespace MailTTS
 {
     public partial class Form1 : Form
     {
-        private MailChecker checker = new MailChecker();
+        private readonly MailChecker checker = new MailChecker();
         private delegate void LogDelegate(string msg);
-        private LogDelegate AddLog;
-        private ConcurrentQueue<string> msgQueue = new ConcurrentQueue<string>();
-        private CancellationTokenSource cts = new CancellationTokenSource();
-        private Task ttsTask;
-        private MemoryCache cache;
+        private readonly LogDelegate AddLog;
+        private readonly ConcurrentQueue<string> msgQueue = new ConcurrentQueue<string>();
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private readonly Task ttsTask;
+        private readonly MemoryCache cache;
 
         public Form1()
         {
@@ -32,8 +32,10 @@ namespace MailTTS
             cache = MemoryCache.Default;
 
             ttsTask = Task.Run(() => {
-                var synthes = new SpeechSynthesizer();
-                synthes.Rate = 2;
+                var synthes = new SpeechSynthesizer
+                {
+                    Rate = 2
+                };
                 while (!cts.Token.IsCancellationRequested)
                 {
                     if (msgQueue.TryDequeue(out var msg))
@@ -83,7 +85,7 @@ namespace MailTTS
             }
         }
 
-        private void notifyIcon1_Click(object sender, EventArgs e)
+        private void NotifyIcon1_Click(object sender, EventArgs e)
         {
             this.Show();
             if (this.WindowState == FormWindowState.Minimized)

@@ -13,24 +13,26 @@ namespace MailTTS
         public delegate void OnMessageDelegate(string from, string subject);
         public event OnMessageDelegate OnMessage;
 
-        private FileSystemWatcher watcher;
-        private Timer timer;
-        private DBReader reader;
+        private readonly FileSystemWatcher watcher;
+        private readonly Timer timer;
+        private readonly DBReader reader;
         private long lastMsgId = -1;
-        private string dbfilename = "Store.db";
-        private string dbpath;
+        private readonly string dbfilename = "Store.db";
+        private readonly string dbpath;
 
         public MailChecker()
         {
             dbpath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Mailbird", "Store");
             reader = new DBReader(Path.Combine(dbpath, dbfilename));
 
-            watcher = new FileSystemWatcher(dbpath, dbfilename+"*");
-            watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size;
+            watcher = new FileSystemWatcher(dbpath, dbfilename + "*")
+            {
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size
+            };
             watcher.Changed += Watcher_Changed;
             watcher.EnableRaisingEvents = true;
 
-            timer = new Timer(OnTimer, null, 5000, 5000);
+            timer = new Timer(OnTimer, null, 5000, 60000);
         }
 
         private void CheckNewMessage()
