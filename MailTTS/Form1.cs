@@ -61,7 +61,7 @@ namespace MailTTS
 
         private void Checker_OnMessage(string from, string subject)
         {
-            var s = string.Format("{0} 说：{1}", from, subject);
+            var s = string.Format("{0} 说： {1}", from, subject);
             this.Invoke(AddLog, s);
             msgQueue.Enqueue(s);
         }
